@@ -40,7 +40,7 @@ PATCHES_DIR="$MODELS_DIR/model_patches"
 RIFE_DIR="$MODELS_DIR/rife"
 SEEDVR2_DIR="$MODELS_DIR/seedvr2"
 
-# --- Пустые массивы (заполняются ниже если DOWNLOAD_LUSTIFY=true) ---
+# --- Пустые массивы ---
 CHECKPOINTS=()
 DIFFUSION_MODELS=()
 UNET=()
@@ -71,7 +71,7 @@ SEEDVR2_MODELS=()
 if [ "${DOWNLOAD_LUSTIFY,,}" = "true" ]; then
 
 CHECKPOINTS+=(
-    "https://huggingface.co/Kutches/XL/resolve/main/lustifySDXLNSFW_ggwpV7.safetensors"
+    "https://civitai.red/api/download/models/2155386?token=5fb92c84c0160ed0c0f066ad329fccc5"
 )
 
 LORAS+=(
