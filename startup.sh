@@ -65,21 +65,16 @@ SAMS_MODELS=(
   "https://huggingface.co/datasets/Gourieff/ReActor/resolve/main/models/sams/sam_vit_b_01ec64.pth"
 )
 
-# --- helpers ---
-
 log() { echo "[startup] $*"; }
 
 repo_dir_name() {
-  local name
-  name="$(basename "$1")"
-  printf '%s\n' "${name%.git}"
+  local name; name="$(basename "$1")"; printf '%s\n' "${name%.git}"
 }
 
 provisioning_get_apt_packages() {
   [[ ${#APT_PACKAGES[@]} -eq 0 ]] && return
   log "Installing apt packages..."
-  sudo apt-get update
-  sudo apt-get install -y "${APT_PACKAGES[@]}"
+  sudo apt-get update && sudo apt-get install -y "${APT_PACKAGES[@]}"
 }
 
 provisioning_clone_comfyui() {
@@ -87,8 +82,7 @@ provisioning_clone_comfyui() {
     log "Cloning ComfyUI..."
     git clone https://github.com/comfyanonymous/ComfyUI.git "$COMFYUI_DIR"
   elif [[ "$UPDATE_COMFYUI" == "1" ]]; then
-    log "Updating ComfyUI..."
-    git -C "$COMFYUI_DIR" pull --ff-only || true
+    log "Updating ComfyUI..."; git -C "$COMFYUI_DIR" pull --ff-only || true
   else
     log "ComfyUI already exists, skip update"
   fi
@@ -206,12 +200,18 @@ provisioning_start() {
   provisioning_get_pip_packages
   provisioning_patch_nag
 
-  provisioning_get_files "$COMFYUI_DIR/models/checkpoints"      "${CHECKPOINTS[@]}"
-  provisioning_get_files "$COMFYUI_DIR/models/loras"            "${LORAS[@]}"
-  provisioning_get_files "$COMFYUI_DIR/models/upscale_models"   "${UPSCALE_MODELS[@]}"
-  provisioning_get_files "$COMFYUI_DIR/models/ultralytics/bbox" "${ULTRA1_MODELS[@]}"
-  provisioning_get_files "$COMFYUI_DIR/models/ultralytics/segm" "${ULTRA2_MODELS[@]}"
-  provisioning_get_files "$COMFYUI_DIR/models/sams"             "${SAMS_MODELS[@]}"
+  # Модели качаем параллельно
+  log "Starting parallel model downloads..."
+
+  provisioning_get_files "$COMFYUI_DIR/models/checkpoints"      "${CHECKPOINTS[@]}"      &
+  provisioning_get_files "$COMFYUI_DIR/models/loras"            "${LORAS[@]}"            &
+  provisioning_get_files "$COMFYUI_DIR/models/upscale_models"   "${UPSCALE_MODELS[@]}"   &
+  provisioning_get_files "$COMFYUI_DIR/models/ultralytics/bbox" "${ULTRA1_MODELS[@]}"    &
+  provisioning_get_files "$COMFYUI_DIR/models/ultralytics/segm" "${ULTRA2_MODELS[@]}"    &
+  provisioning_get_files "$COMFYUI_DIR/models/sams"             "${SAMS_MODELS[@]}"      &
+
+  wait
+  log "All models downloaded!"
 
   echo
   log "Provisioning complete. Starting ComfyUI..."
